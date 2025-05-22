@@ -1,0 +1,4 @@
+src~=0.0.0
+setuptools~=65.5.0
+python-dotenv~=1.1.0
+openai~=1.81.0

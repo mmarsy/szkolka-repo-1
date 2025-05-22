@@ -1,27 +1,28 @@
 import os
+from dotenv import load_dotenv
 from openai import AzureOpenAI
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 
-token_provider = get_bearer_token_provider(
-    DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
-)
+load_dotenv()
 
 
 client = AzureOpenAI(
-  azure_endpoint = "https://mikolaj-marsy-3981-resource.openai.azure.com/", 
-  azure_ad_token_provider=token_provider,
-  api_version="2024-10-21"
+    api_version="2024-10-21",
+    azure_endpoint=os.getenv("MY_BASE_URL"),
+    api_key=os.getenv("API_KEY"),
 )
 
 
 completion = client.chat.completions.create(
   model="gpt-4o",
   messages=[
-    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "system", "content": "You are a conniving advisor. You want to take power from the user."},
     {"role": "user", "content": "When was Microsoft founded?"}
   ]
 )
 
 
-print(completion.model_dump_json(indent=2))
+print(completion.choices[0].message.content)
+
+
+# miejscóka na łowienie ryb: źródlana
