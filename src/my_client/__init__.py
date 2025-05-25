@@ -4,21 +4,6 @@ from dotenv import load_dotenv
 from openai import AzureOpenAI
 
 
-load_dotenv()
-
-logger = logging.getLogger('USAGE')
-logger.propagate = False
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s: %(message)s')
-
-
-client = AzureOpenAI(
-    api_version="2024-10-21",
-    azure_endpoint=os.getenv("MY_BASE_URL"),
-    api_key=os.getenv("API_KEY"),
-)
-
-
 class FormattedUsage(dict):
     def __init__(self, response_usage):
         super().__init__()
@@ -28,7 +13,28 @@ class FormattedUsage(dict):
 
 
 class Chat(list):
-    def __init__(self, initial_prompt, chat_client=client, model='gpt-4o', initiative=True):
+    def __init__(self, initial_prompt, chat_client=None, model='gpt-4o', initiative=True, logger=None):
+        load_dotenv()
+
+        if chat_client is None:
+            chat_client = AzureOpenAI(
+                api_version="2024-10-21",
+                azure_endpoint=os.getenv("MY_BASE_URL"),
+                api_key=os.getenv("API_KEY"),
+            )
+
+        if logger is None:
+            logger = logging.getLogger('USAGE')
+            logger.propagate = False
+            logger.setLevel(logging.INFO)
+
+            handler = logging.FileHandler(os.getenv('USAGE_LOG_FILE'))
+            formatter = logging.Formatter(fmt='%(asctime)s | %(levelname)s | %(name)s: %(message)s',
+                                          datefmt='%Y-%m-%d %H:%M:%S')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+
+        self.logger = logger
         self.client = chat_client
         self.model = model
         super().__init__(initial_prompt)
@@ -38,7 +44,8 @@ class Chat(list):
                 model=self.model,
                 messages=self
             )
-            logger.info(FormattedUsage(response.usage))
+            if self.logger is not None:
+                self.logger.info(FormattedUsage(response.usage))
             response_content = response.choices[0].message.content
             print(f'CHAT: {response_content}')
             self.append({'role': 'assistant', 'content': response_content})
@@ -50,11 +57,12 @@ class Chat(list):
             model=self.model,
             messages=self
         )
-        logger.info(FormattedUsage(response.usage))
+        if self.logger is not None:
+            self.logger.info(FormattedUsage(response.usage))
         response_content = response.choices[0].message.content
         self.append({'role': 'assistant', 'content': response_content})
         return f'CHAT: {response_content}'
 
 
 if __name__ == '__main__':
-    logger.info('TEST', exc_info=False)
+    pass
