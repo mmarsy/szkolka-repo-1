@@ -1,4 +1,10 @@
-from my_client import Chat
+from my_client import Chat, logger, formatter
+import logging
+
+
+handler = logging.FileHandler('logs/usage.md')
+logger.addHandler(handler)
+handler.setFormatter(formatter)
 
 
 string = '''
@@ -14,4 +20,4 @@ while True:
     prompt = input('USER: ')
     if prompt.lower() == 'break':
         break
-    chat.ask(prompt)
+    print(chat.ask(prompt))

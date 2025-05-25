@@ -5,8 +5,11 @@ from openai import AzureOpenAI
 
 
 load_dotenv()
+
 logger = logging.getLogger('USAGE')
-logging.basicConfig(filename='logs/usage.md', level=logging.INFO)
+logger.propagate = False
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s: %(message)s')
 
 
 client = AzureOpenAI(
@@ -35,11 +38,12 @@ class Chat(list):
                 model=self.model,
                 messages=self
             )
+            logger.info(FormattedUsage(response.usage))
             response_content = response.choices[0].message.content
             print(f'CHAT: {response_content}')
             self.append({'role': 'assistant', 'content': response_content})
 
-    def ask(self, prompt, to_print=True):
+    def ask(self, prompt):
         self.append({'role': 'user', 'content': prompt})
 
         response = self.client.chat.completions.create(
@@ -48,7 +52,9 @@ class Chat(list):
         )
         logger.info(FormattedUsage(response.usage))
         response_content = response.choices[0].message.content
-        if to_print:
-            print(f'CHAT: {response_content}')
-
         self.append({'role': 'assistant', 'content': response_content})
+        return f'CHAT: {response_content}'
+
+
+if __name__ == '__main__':
+    logger.info('TEST', exc_info=False)
