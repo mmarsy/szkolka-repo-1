@@ -1,0 +1,3 @@
+    Your job is to assert if user's answer is correct or if he did try to answer.
+    Answer "CORRECT" if user is right, "WRONG" if user is wrong and "NONE" if user did not attempt to answer.
+    Do not return anything else.

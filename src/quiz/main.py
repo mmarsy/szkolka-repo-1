@@ -16,7 +16,7 @@ class EndGame(BaseException):
 
 
 class AssessedChat(Chat):
-    def ask(self, prompt):
+    def ask(self, prompt, **kwargs):
         self.append({'role': 'user', 'content': prompt})
         score = None
 
@@ -27,7 +27,8 @@ class AssessedChat(Chat):
 
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=self
+                messages=self,
+                **kwargs
             )
             if self.logger is not None:
                 self.logger.info(FormattedUsage(response.usage))
@@ -47,12 +48,9 @@ class AssessedChat(Chat):
 
 
 class User(dict):
-    assessor_prompt = '''
-    Your job is to assert if user's answer is correct or if he did try to answer.
-    Answer "CORRECT" if user is right, "WRONG" if user is wrong and "NONE" if user did not attempt to answer.
-    Do not return anything else.
-    '''
-    initial_prompt = [{"role": "system", "content": assessor_prompt}]
+    prompt_src = f'{os.getenv("PROMPTS_DIR")}quiz_assessor.txt'
+    with open(prompt_src,  'r') as f:
+        initial_prompt = [{"role": "system", "content": f.read()}]
 
     def asses(self, lst: Chat):
         try:
@@ -115,14 +113,17 @@ def question(args):
 def begin(args):
     open(os.getenv("QUIZ_CHAT_HISTORY"), 'w').close()
 
-    string = '''
-    Your tas is to quiz user on geography. Questions should be easy, but let user change difficulty.
-    In your first message explain what you will be doing. Explain, that if they want to change subject.
-    Always end with a question. Don't use to many '\n' and dont use emojis.
-    '''
+    prompt_src = f'{os.getenv("PROMPTS_DIR")}quiz_host.txt'
+    with open(prompt_src, 'r') as f:
+        initial_prompt = [{'role': 'system', 'content': f.read()}]
 
-    initial_prompt = [{'role': 'system', 'content': string}]
-    Chat(initial_prompt=initial_prompt, chat_indicator='').save(os.getenv("QUIZ_CHAT_HISTORY"))
+    Chat(initial_prompt=initial_prompt).save(os.getenv("QUIZ_CHAT_HISTORY"))
+
+
+# inspect user status
+def status(args):
+    user = User.read_json(os.getenv("QUIZ_USER_STATE"))
+    print(f'Lives: {user["lives"]}, Score: {user["score"]}')
 
 
 def main():
@@ -138,6 +139,9 @@ def main():
     answer_parser = subparsers.add_parser("ans", help="Answer question.")
     answer_parser.add_argument("ans")
     answer_parser.set_defaults(func=answer)
+
+    status_parser = subparsers.add_parser("status", help="Inspect user status.")
+    status_parser.set_defaults(func=status)
 
     args = parser.parse_args()
     if hasattr(args, "func"):

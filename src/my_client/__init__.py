@@ -13,9 +13,24 @@ class FormattedUsage(dict):
         self['total_tokens'] = response_usage.total_tokens
 
 
+class MyClient(AzureOpenAI):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        logger = logging.getLogger('USAGE')
+        logger.propagate = False
+        logger.setLevel(logging.INFO)
+
+        handler = logging.FileHandler(os.getenv('USAGE_LOG_FILE'))
+        formatter = logging.Formatter(fmt='%(asctime)s | %(levelname)s | %(name)s: %(message)s',
+                                      datefmt='%Y-%m-%d %H:%M:%S')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        self.logger = logger
+
+
 class Chat(list):
     def __init__(self, initial_prompt, chat_client=None, model='gpt-4o', initiative=True, logger=None,
-                 chat_indicator='', user_indicator='USER: '):
+                 chat_indicator='', user_indicator='USER: ', **kwargs):
         load_dotenv()
 
         if chat_client is None:
@@ -46,7 +61,8 @@ class Chat(list):
         if initiative:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=self
+                messages=self,
+                **kwargs
             )
             if self.logger is not None:
                 self.logger.info(FormattedUsage(response.usage))
@@ -54,12 +70,13 @@ class Chat(list):
             print(f'{self.chat_indicator}{response_content}')
             self.append({'role': 'assistant', 'content': response_content})
 
-    def ask(self, prompt):
+    def ask(self, prompt, **kwargs):
         self.append({'role': 'user', 'content': prompt})
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self
+            messages=self,
+            **kwargs
         )
         if self.logger is not None:
             self.logger.info(FormattedUsage(response.usage))
