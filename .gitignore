@@ -4,5 +4,6 @@ venv/
 .idea/
 .env
 logs/
-scr/cli-test/
-
+pychace/
+build/
+*.json

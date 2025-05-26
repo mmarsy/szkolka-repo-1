@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "szkolka-repo-1"
+version = "0.1.0"
+description = "Uczę się różnych rzeczy :))"
+authors = [{ name = "Mikołaj Marsy", email = "mikolaj.marsy@gmail.com" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+
+dependencies = [
+    "src",
+    "setuptools",
+    "python-dotenv",
+    "openai"
+]
+
+# Optional dependency groups
+[project.optional-dependencies]
+dev = ["black", "mypy", "pytest"]
+docs = ["mkdocs", "mkdocs-material"]
+
+# CLI entry point (if you want a command-line tool)
+[project.scripts]
+quiz = "quiz.main:main"

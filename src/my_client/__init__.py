@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 
@@ -13,7 +14,8 @@ class FormattedUsage(dict):
 
 
 class Chat(list):
-    def __init__(self, initial_prompt, chat_client=None, model='gpt-4o', initiative=True, logger=None):
+    def __init__(self, initial_prompt, chat_client=None, model='gpt-4o', initiative=True, logger=None,
+                 chat_indicator='', user_indicator='USER: '):
         load_dotenv()
 
         if chat_client is None:
@@ -37,6 +39,8 @@ class Chat(list):
         self.logger = logger
         self.client = chat_client
         self.model = model
+        self.chat_indicator = chat_indicator
+        self.user_indicator = user_indicator
         super().__init__(initial_prompt)
 
         if initiative:
@@ -47,7 +51,7 @@ class Chat(list):
             if self.logger is not None:
                 self.logger.info(FormattedUsage(response.usage))
             response_content = response.choices[0].message.content
-            print(f'CHAT: {response_content}')
+            print(f'{self.chat_indicator}{response_content}')
             self.append({'role': 'assistant', 'content': response_content})
 
     def ask(self, prompt):
@@ -61,8 +65,32 @@ class Chat(list):
             self.logger.info(FormattedUsage(response.usage))
         response_content = response.choices[0].message.content
         self.append({'role': 'assistant', 'content': response_content})
-        return f'CHAT: {response_content}'
+        return f'{self.chat_indicator}{response_content}'
+
+    def save(self, filename):
+        with open(filename, 'w') as f:
+            f.write(json.dumps(self, indent=4))
+
+    @staticmethod
+    def read_json(filename, **kwargs):
+        with open(filename, 'r') as f:
+            obj = json.load(f)
+            return Chat(obj, **kwargs)
 
 
 if __name__ == '__main__':
-    pass
+
+    string = '''
+    Your tas is to quiz user on geography. Questions should be easy. If user is correct and your response with "ADD POINT".
+    In your first message explain what you will be doing. Explain, that if they want to change subject, they can and they win if they score 10 points.
+    If they win, dont ask them any more questions and tell them to type "break" to end session.
+    '''
+
+    initial_prompt = [{'role': 'system', 'content': string}]
+    chat = Chat(initial_prompt=initial_prompt)
+    chat.save('test_save.json')
+    del chat
+
+    chat = Chat.read_json('test_save.json', initiative=False)
+    chat.ask(input('USER: '))
+
