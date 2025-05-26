@@ -15,7 +15,8 @@ dependencies = [
     "src",
     "setuptools",
     "python-dotenv",
-    "openai"
+    "openai",
+    "numpy"
 ]
 
 # Optional dependency groups
