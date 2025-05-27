@@ -151,24 +151,7 @@ def main():
 
 
 if __name__ == '__main__':
-#     assessor = Chat(initial_prompt=User.initial_prompt, initiative=False, chat_indicator='')
-#     assessor.append({"role": "system", "content": """
-#     Q: Awesome! Here's your first geography question! 🌎
-#
-# **Easy Question:**
-# What is the largest country in the world by land area?
-#
-# a) Canada
-# b) Russia
-# c) China
-# d) United States
-#
-# Take your time; no pressure! 😊
-#     A: can we do something else?
-#     """})
-#     print(assessor.ask(""))
-
     load_dotenv()
-    user = User(lives=3)
-    user.save(os.getenv("QUIZ_USER_STATE"))
+    u = User(lives=3)
+    u.save(os.getenv("QUIZ_USER_STATE"))
     print(User.read_json(os.getenv("QUIZ_USER_STATE")))

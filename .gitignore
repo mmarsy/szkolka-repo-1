@@ -7,3 +7,5 @@ logs/
 pychace/
 build/
 *.json
+.ipynb_checkpoints
+rags/

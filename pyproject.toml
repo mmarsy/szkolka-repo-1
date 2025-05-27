@@ -16,7 +16,13 @@ dependencies = [
     "setuptools",
     "python-dotenv",
     "openai",
-    "numpy"
+    "numpy",
+    "azure-search-documents",
+    "azure-identity",
+    "langchain",
+    "pypdf",
+    "nbformat",
+    "PyPDF2",
 ]
 
 # Optional dependency groups

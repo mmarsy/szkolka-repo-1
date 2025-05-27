@@ -28,7 +28,7 @@ class MyClient(AzureOpenAI):
         self.logger = logger
 
 
-class Chat(list):
+class Chat(list, AzureOpenAI):
     def __init__(self, initial_prompt, chat_client=None, model='gpt-4o', initiative=True, logger=None,
                  chat_indicator='', user_indicator='USER: ', **kwargs):
         load_dotenv()
