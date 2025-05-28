@@ -9,4 +9,4 @@ build/
 *.json
 .ipynb_checkpoints
 rags/
-paste_bin.py
+old_code.py
