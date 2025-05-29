@@ -12,7 +12,6 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 dependencies = [
-    "src",
     "setuptools",
     "python-dotenv",
     "openai",
@@ -21,8 +20,6 @@ dependencies = [
     "azure-identity",
     "langchain",
     "pypdf",
-    "nbformat",
-    "PyPDF2",
 ]
 
 # Optional dependency groups
