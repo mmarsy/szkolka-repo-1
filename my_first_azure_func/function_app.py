@@ -6,7 +6,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain.chains import RetrievalQA
-from langchain.chat_models import AzureChatOpenAi
+from langchain_community.chat_models.azure_openai import AzureChatOpenAI
 
 import qdrant_client.http.exceptions as qdrant_exceptions
 
@@ -63,25 +63,39 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.route(route="http_trigger")
 def ask_func(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
-    
-    model = AzureChatOpenAi(
+    load_dotenv()
+
+    model = AzureChatOpenAI(
         azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_URL"],
         azure_deployment=os.environ["CHAT_MODEL"],
         openai_api_version=os.environ["API_VERSION"],
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
     )
 
-    retrival_qa = RetrievalQA(llm=model, 
-                              retriever=MyVectorStore().qdrant_vector_store.as_retriever())
+    retrival_qa = RetrievalQA.from_chain_type(llm=model, 
+                              retriever=MyVectorStore().qdrant_vector_store.as_retriever(serch_kwargs={"k": 5}))
     
     try:
-        user_question = req.params.get('question')
-
-    except Exception as e:
-        logging.error(e)
+        user_question= req.get_json().get('question')
+    
+    except ValueError:
+        return func.HttpResponse(
+            "Please pass a query in the request body",
+            status_code=400
+        )
 
     retrival_qa_response = retrival_qa.run(user_question)
-    return retrival_qa_response
+    return func.HttpResponse(retrival_qa_response, status_code=200)
     
 if __name__ == "__main__":
+    load_dotenv()
+
     my_store = MyVectorStore(collection_name="nonexistant")
-    print(len(my_store.query("Czym jest apriori?")))
+    retrival_qa = RetrievalQA.from_chain_type(llm=AzureChatOpenAI(
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_URL"],
+        azure_deployment=os.environ["CHAT_MODEL"],
+        api_version=os.environ["API_VERSION"],
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+    ), retriever=my_store.qdrant_vector_store.as_retriever(serch_kwargs={"k": 5}))
+
+    print(retrival_qa.run("Czym jest apriori?"))
