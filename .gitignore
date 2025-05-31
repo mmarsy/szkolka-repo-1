@@ -10,3 +10,7 @@ build/
 .ipynb_checkpoints
 rags/
 old_code.py
+__blobstorage__
+.vscode/
+__queuestorage__
+AzuriteConfig
