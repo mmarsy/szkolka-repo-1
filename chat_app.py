@@ -1,19 +1,27 @@
+# retrival imports
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain.chains import RetrievalQA
+from langchain.chains import LLMChain
 from langchain_community.chat_models.azure_openai import AzureChatOpenAI
-
 import qdrant_client.http.exceptions as qdrant_exceptions
 
+# system imports
 import os
 import logging
 import time
-
-import streamlit as st
-import requests
 from dotenv import load_dotenv
+
+# chat imports
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
+from langchain_core.prompts import PromptTemplate
+
+# streamlit imports
+import streamlit as st
+
 
 
 class MyVectorStore:
@@ -66,9 +74,20 @@ model = AzureChatOpenAI(
     api_key=os.environ["AZURE_OPENAI_API_KEY"],
 )
 
-# retriever=MyVectorStore(src_dir='math_pdfs', collection_name='maths').qdrant_vector_store.as_retriever(serch_kwargs={"k": 5})
-retrival_qa = RetrievalQA.from_chain_type(llm=model, 
-                              retriever=MyVectorStore(src_dir="math_pdfs", collection_name="maths").qdrant_vector_store.as_retriever(serch_kwargs={"k": 5}))
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True,)
+
+retriever=MyVectorStore(src_dir="math_pdfs", collection_name="maths").qdrant_vector_store.as_retriever(serch_kwargs={"k": 5})
+retrival_qa = RetrievalQA.from_chain_type(llm=model,
+                                          retriever=retriever,)
+
+template = """Answer user question given history of conversation and context.\n
+Question: {question}\n
+Context: {rag_context}\n"""
+convo_chain = LLMChain(llm=model,
+                       memory=memory,
+                       prompt=PromptTemplate.from_template(template=template,))
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -101,5 +120,12 @@ if prompt:
             # Add a blinking cursor to simulate typing
             message_placeholder.markdown(full_response + "▌")
         message_placeholder.markdown(full_response)
+        print(memory.chat_memory.messages)
+
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+
+if __name__ == "__main__":
+    #print(convo_chain.run({"question": "what is my name?", "rag_context": "His name is Mike."}))
+    print(convo_chain.run("{question}: what is my name?, {rag_context}: His name is Mike."))
