@@ -3,7 +3,7 @@ import requests
 
 def call_func(data=None, url="http://localhost:7071/api/http_trigger"):
     if data is None:
-        data = {"question": "Czym jest apriori?"}
+        data = {"question": "What is a game?"}
 
     response = requests.post(url, json=data)
 

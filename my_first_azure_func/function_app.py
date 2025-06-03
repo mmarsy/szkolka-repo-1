@@ -11,11 +11,19 @@ from langchain_community.chat_models.azure_openai import AzureChatOpenAI
 import qdrant_client.http.exceptions as qdrant_exceptions
 
 import os
+
 import logging
+from azure.monitor.opentelemetry import configure_azure_monitor
+
+# Configure OpenTelemetry to use Azure Monitor with the 
+# APPLICATIONINSIGHTS_CONNECTION_STRING environment variable.
+configure_azure_monitor(
+    logger_name="math_questions",  # Set the namespace for the logger in which you would like to collect telemetry for if you are collecting logging telemetry. This is imperative so you do not collect logging telemetry from the SDK itself.
+)
 
 
 class MyVectorStore:
-    def __init__(self, src_dir='pdfs', collection_name='my_documents'):
+    def __init__(self, src_dir='pdfs', collection_name='maths'):
         load_dotenv()
 
         embeddings = AzureOpenAIEmbeddings(
@@ -59,11 +67,14 @@ class MyVectorStore:
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-
 @app.route(route="http_trigger")
 def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+    logger = logging.getLogger("math_questions")  # Logging telemetry will be collected from logging calls made with this logger and all of it's children loggers.
+    logger.setLevel(logging.INFO)
+    logger.info('Python HTTP trigger function processed a request.')
     load_dotenv()
+
+    #return func.HttpResponse(os.environ['TEST'], status_code=200)
 
     model = AzureChatOpenAI(
         azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_URL"],
@@ -86,4 +97,3 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
 
     retrival_qa_response = retrival_qa.run(user_question)
     return func.HttpResponse(retrival_qa_response, status_code=200)
-    
