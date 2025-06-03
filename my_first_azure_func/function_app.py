@@ -61,7 +61,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.route(route="http_trigger")
-def ask_func(req: func.HttpRequest) -> func.HttpResponse:
+def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     load_dotenv()
 
@@ -87,15 +87,3 @@ def ask_func(req: func.HttpRequest) -> func.HttpResponse:
     retrival_qa_response = retrival_qa.run(user_question)
     return func.HttpResponse(retrival_qa_response, status_code=200)
     
-if __name__ == "__main__":
-    load_dotenv()
-
-    my_store = MyVectorStore(collection_name="nonexistant")
-    retrival_qa = RetrievalQA.from_chain_type(llm=AzureChatOpenAI(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_URL"],
-        azure_deployment=os.environ["CHAT_MODEL"],
-        api_version=os.environ["API_VERSION"],
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-    ), retriever=my_store.qdrant_vector_store.as_retriever(serch_kwargs={"k": 5}))
-
-    print(retrival_qa.run("Czym jest apriori?"))
